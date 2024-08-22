@@ -17,9 +17,12 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { editFileName, imageFileFilter } from './utils';
 import * as fs from 'fs'
+import { FileUploadService } from './file-upload.service';
+import { Response } from 'express';
 
 @Controller('file-upload')
 export class FileUploadController {
+  constructor(private fileService:FileUploadService){}
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
@@ -71,4 +74,23 @@ export class FileUploadController {
     })
     return res.end(`Successfully deleted ${image}`)
   }
+
+  @Post('cloud')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadedFile(@UploadedFile()file: Express.Multer.File, @Res() res:Response){
+    try{
+      const savedImage=await this.fileService.uploadFile(file)
+      return res.status(201).json({image:savedImage})
+    }
+    catch(error){
+      return res.status(500).json({message:"Failed to upload file",error})
+    }
+  }
+
+  @Get('/name/:id')
+  async getImage(@Param('id') id){
+    return await this.fileService.getImageNameById(id)
+  }
+
+  
 }
